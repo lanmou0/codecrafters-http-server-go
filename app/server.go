@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net"
@@ -26,10 +27,15 @@ func main() {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+	defer fmt.Println("Connection Closed")
 	defer conn.Close()
 	fmt.Println("Connection Accepted")
 
-	buf, err := io.ReadAll(conn)
+	var buf = make([]byte, 50, 2048)
+
+	reader := bufio.NewReader(conn)
+
+	_, err = io.ReadFull(reader, buf)
 	if err != nil {
 		fmt.Println("Error reading request: ", err.Error())
 		os.Exit(1)
@@ -38,10 +44,6 @@ func main() {
   var resp = "HTTP/1.1 200 OK\r\n\r\n";
 
 	s := strings.Split(string(buf), escape)
-
-	for _, line := range s {
-		fmt.Println(line)
-	}
 
 	if(strings.Split(s[0], " ")[1] != "/") {
 		resp = "HTTP/1.1 404 Not Found\r\n\r\n"
