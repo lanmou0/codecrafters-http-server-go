@@ -54,7 +54,7 @@ func main() {
 			resp = buildResponse(200, "OK", make(map[header]string), "")
 		}else if(strings.HasPrefix(path, ECHO_PATH)) {
 			message := strings.TrimPrefix(path, ECHO_PATH)
-			headers := map[header]string{contentType: "text/plain", contentSize: strconv.Itoa(len(message))}
+			headers := map[header]string{contentType: "text/plain", contentLength: strconv.Itoa(len(message))}
 			resp = buildResponse(200, "OK", headers, message)
 		}
 		fmt.Println("Writing response")
