@@ -8,7 +8,7 @@ type header string;
 
 const (
 	contentType header = "Content-Type"
-	contentSize header = "Content-Size" 
+	contentLength header = "Content-Length" 
 )
 
 func buildResponse(httpCode int, httpMessage string, headers map[header]string, body string) string {	
