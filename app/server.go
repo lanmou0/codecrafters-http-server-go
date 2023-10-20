@@ -30,7 +30,7 @@ func main() {
 	})
 
 	createController("/echo", func(req HttpRequest) string {
-		message := strings.TrimPrefix(req.path[1], "/")
+		message := strings.TrimPrefix(strings.Join(req.path[1:], ""), "/")
 		headers := make(map[HttpHeader]string)
 		headers[ContentType] = "text/plain"
 		headers[ContentLength] = strconv.Itoa(len(message))
