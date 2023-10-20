@@ -79,6 +79,6 @@ func parseRequest(request []byte) HttpRequest {
 }
 
 func parsePath(rawPath string) []string {
-	re := regexp.MustCompile(`/[^/]+[^/]*`)
+	re := regexp.MustCompile(`/[^/]*[^/]*`)
 	return re.FindAllString(rawPath, -1)
 }
