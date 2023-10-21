@@ -62,7 +62,7 @@ func parseRequest(request []byte, id string) HttpRequest {
 	hRequest.path = parsePath(meta[1])
 	hRequest.method = HttpMethod(meta[2])
 
-	if(lines[1] == "\r\n") {
+	if(lines[1] == "") {
 		return hRequest
 	}
 
