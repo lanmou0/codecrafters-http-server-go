@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"os"
+	"net"
 
 	"golang.org/x/exp/slices"
 )
@@ -45,6 +47,8 @@ func buildResponse(httpCode int, httpMessage string, headers map[HttpHeader]stri
 }
 
 func parseRequest(request []byte) HttpRequest {
+	fmt.Println("Parsing request: \n", string(request))
+
 	hRequest := HttpRequest{};
 	lines := strings.Split(string(request), ESCAPE)
 
@@ -53,10 +57,6 @@ func parseRequest(request []byte) HttpRequest {
 
 	hRequest.path = parsePath(meta[1])
 	hRequest.method = HttpMethod(meta[2])
-
-	for _, l := range lines {
-		fmt.Println(">> ", l)
-	}
 
 	if(len(lines) <= 2) {
 		return hRequest
@@ -81,4 +81,29 @@ func parseRequest(request []byte) HttpRequest {
 func parsePath(rawPath string) []string {
 	re := regexp.MustCompile(`/[^/]*[^/]*`)
 	return re.FindAllString(rawPath, -1)
+}
+
+func handleRequest(conn net.Conn) {
+	buf := make([]byte, 1024)
+
+	_, err := conn.Read(buf)
+	if err != nil {
+		fmt.Println("Error reading request: ", err.Error())
+		os.Exit(1)
+	}
+
+	hRequest := parseRequest(buf)
+
+	resp := getController(hRequest.path[0])(hRequest)
+
+	fmt.Println("Writing response")
+	_, err = conn.Write([]byte(resp))
+	if err != nil {
+		fmt.Println("Error writing request: ", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Response sent")
+
+	fmt.Println("Connection Closed\r\n")
+	conn.Close()
 }

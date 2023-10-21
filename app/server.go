@@ -11,13 +11,14 @@ import (
 const ROOT_PATH = "/"
 const ECHO_PATH = "/echo/"
 const NIL_PATH = "nil"
+
 var ESCAPE = "\r\n"
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
 
-	createController("nil", func (req HttpRequest) string {
+	createController("nil", func(req HttpRequest) string {
 		message := fmt.Sprintf("Path Not Found: %s", req.path)
 		headers := make(map[HttpHeader]string)
 		headers[ContentType] = "text/plain"
@@ -25,7 +26,7 @@ func main() {
 		return buildResponse(404, "Not Found", headers, message)
 	})
 
-	createController("/", func (req HttpRequest) string {
+	createController("/", func(req HttpRequest) string {
 		return buildResponse(200, "OK", make(map[HttpHeader]string), "")
 	})
 
@@ -37,7 +38,7 @@ func main() {
 		return buildResponse(200, "OK", headers, message)
 	})
 
-	createController("/user-agent", func (req HttpRequest) string {
+	createController("/user-agent", func(req HttpRequest) string {
 		message := req.headers[UserAgent]
 		fmt.Println("DEBUG", req.headers)
 		headers := make(map[HttpHeader]string)
@@ -52,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("listening on Port 4221")
-	
+
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -60,28 +61,7 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Println("Connection Accepted")
-		
-		buf := make([]byte, 1024)
-	
-		_, err = conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading request: ", err.Error())
-			os.Exit(1)
-		}
-	
-		hRequest := parseRequest(buf)
 
-		resp := getController(hRequest.path[0])(hRequest)
-
-		fmt.Println("Writing response")
-		_, err = conn.Write([]byte(resp))
-		if err != nil {
-			fmt.Println("Error writing request: ", err.Error())
-			os.Exit(1)
-		}
-		fmt.Println("Response sent")
-
-		fmt.Println("Connection Closed\r\n")
-		conn.Close()
+		go handleRequest(conn)
 	}
 }
