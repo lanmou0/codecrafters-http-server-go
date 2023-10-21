@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
-	"os"
 	"net"
+	"os"
+	"strings"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
@@ -46,8 +46,8 @@ func buildResponse(httpCode int, httpMessage string, headers map[HttpHeader]stri
 	return resp
 }
 
-func parseRequest(request []byte) HttpRequest {
-	fmt.Println("Parsing request: \n", string(request))
+func parseRequest(request []byte, id string) HttpRequest {
+	fmt.Println(id, "Parsing request")
 
 	hRequest := HttpRequest{};
 	lines := strings.Split(string(request), ESCAPE)
@@ -58,7 +58,7 @@ func parseRequest(request []byte) HttpRequest {
 	hRequest.path = parsePath(meta[1])
 	hRequest.method = HttpMethod(meta[2])
 
-	if(len(lines) <= 2) {
+	if(lines[1] == "\r\n") {
 		return hRequest
 	}
 
@@ -78,32 +78,56 @@ func parseRequest(request []byte) HttpRequest {
 	return hRequest
 }
 
-func parsePath(rawPath string) []string {
-	re := regexp.MustCompile(`/[^/]*[^/]*`)
-	return re.FindAllString(rawPath, -1)
+func launchServer(addr string, port string) {
+
+	if(validateAddrAndPort(addr, port) < 0) {
+		return
+	}
+
+	fullAddr := fmt.Sprintf("%s:%s", addr, port)
+
+	l, err := net.Listen("tcp", fullAddr)
+	if err != nil {
+		fmt.Println("Failed to bind to port ", port)
+		os.Exit(1)
+	}
+	fmt.Println("listening on Port ", port)
+
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
+		
+		connId := uuid.NewString()+": "
+		fmt.Println(connId, "Connection Accepted")
+
+		go handleRequest(conn, connId)
+	}
 }
 
-func handleRequest(conn net.Conn) {
+func handleRequest(conn net.Conn, id string) {
 	buf := make([]byte, 1024)
 
 	_, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println("Error reading request: ", err.Error())
-		os.Exit(1)
+		fmt.Println(id, "Error reading request: ", err.Error())
+		return
 	}
 
-	hRequest := parseRequest(buf)
+	hRequest := parseRequest(buf, id)
 
-	resp := getController(hRequest.path[0])(hRequest)
+	resp := getController(hRequest.path[0], id)(hRequest)
 
-	fmt.Println("Writing response")
+	fmt.Println(id, "Writing response")
 	_, err = conn.Write([]byte(resp))
 	if err != nil {
-		fmt.Println("Error writing request: ", err.Error())
-		os.Exit(1)
+		fmt.Println(id, "Error writing request: ", err.Error())
+		return
 	}
-	fmt.Println("Response sent")
+	fmt.Println(id, "Response sent")
 
-	fmt.Println("Connection Closed\r\n")
+	fmt.Println(id, "Connection Closed\r\n")
 	conn.Close()
 }

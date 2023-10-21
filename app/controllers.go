@@ -11,10 +11,12 @@ func createController(path string, controller func(HttpRequest) string) {
 	controllers[path] = controller
 }
 
-func getController(path string) func(HttpRequest) string {
+func getController(path string, id string) func(HttpRequest) string {
 	if(controllers[path] == nil) {
+		fmt.Println(id, "Path not found ", path)
 		return controllers[NIL_PATH]
 	}
+	fmt.Println(id, "Handling request for path ", path)
 	return controllers[path]
 }
 
