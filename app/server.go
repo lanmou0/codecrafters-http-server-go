@@ -53,7 +53,7 @@ func main() {
 		fileName :=  strings.TrimPrefix(req.path[1], "/")
 		fileContent, err := os.ReadFile(path.Join(*dirF, fileName))
 		if(err != nil) {
-			return buildErrorResponse(500, "Internal Server Error", "Error Reading File")
+			return buildErrorResponse(404, "Not Found", "Error Reading File")
 		}
 
 		message := string(fileContent)
