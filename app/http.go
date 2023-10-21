@@ -52,6 +52,10 @@ func parseRequest(request []byte, id string) HttpRequest {
 	hRequest := HttpRequest{};
 	lines := strings.Split(string(request), ESCAPE)
 
+	for _, l := range lines {
+		fmt.Println(id, l)
+	}
+
 	meta := strings.Split(lines[0], " ")
 	hRequest.version = meta[0]
 
