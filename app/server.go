@@ -58,7 +58,7 @@ func main() {
 
 		message := string(fileContent)
 		headers := make(map[HttpHeader]string)
-		headers[ContentType] = "text/plain"
+		headers[ContentType] = "application/octet-stream"
 		headers[ContentLength] = strconv.Itoa(len(message))
 		return buildResponse(200, "OK", headers, message)
 	})
