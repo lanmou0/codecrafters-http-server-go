@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -24,6 +26,7 @@ type HttpMethod string;
 
 const (
 	GET HttpMethod = "GET"
+	POST HttpMethod = "POST"
 )
 
 type HttpRequest struct {
@@ -31,7 +34,7 @@ type HttpRequest struct {
 	path []string;
 	method HttpMethod;
 	headers map[HttpHeader]string;
-	body string;
+	body []byte;
 }
 
 func buildResponse(httpCode int, httpMessage string, headers map[HttpHeader]string, body string) string {	
@@ -57,10 +60,10 @@ func parseRequest(request []byte, id string) HttpRequest {
 	}
 
 	meta := strings.Split(lines[0], " ")
-	hRequest.version = meta[0]
+	hRequest.version = meta[2]
 
 	hRequest.path = parsePath(meta[1])
-	hRequest.method = HttpMethod(meta[2])
+	hRequest.method = HttpMethod(meta[0])
 
 	if(lines[1] == "") {
 		return hRequest
@@ -68,8 +71,10 @@ func parseRequest(request []byte, id string) HttpRequest {
 
 	headersIndex := slices.Index(lines[1:], "")
 	hRequest.headers = make(map[HttpHeader]string)
+
+
 	
-	for _, h := range lines[1:headersIndex] {
+	for _, h := range lines[1:headersIndex+1] {
 		h1 := strings.Split(h, ":")
 		hRequest.headers[HttpHeader(h1[0])] = strings.TrimSpace(h1[1])
 	}
@@ -78,7 +83,28 @@ func parseRequest(request []byte, id string) HttpRequest {
 		return hRequest
 	}
 
-	hRequest.body = lines[headersIndex+1]
+	bodyLen := 0
+
+	if(hRequest.headers[ContentLength] == "") {
+		for i, l := range lines[headersIndex+2:] {
+			if(l == "" && lines[i+1] == "") {
+				break
+			}
+			bodyLen += len(l)
+		}
+	}else {
+		bodyLen, _ = strconv.Atoi(hRequest.headers[ContentLength])
+	}
+
+	fmt.Println(id, "BodyLen", bodyLen)
+
+	var buf = make([]byte, bodyLen)
+
+	for _, l := range lines[headersIndex+2:] {
+		buf = append(buf, []byte(l)...)
+	}
+
+	hRequest.body = bytes.Trim(buf, "\x00")
 	return hRequest
 }
 
@@ -122,7 +148,7 @@ func handleRequest(conn net.Conn, id string) {
 
 	hRequest := parseRequest(buf, id)
 
-	resp := getController(hRequest.path[0], id)(hRequest)
+	resp := getController(hRequest.method, hRequest.path[0], id)(hRequest)
 
 	fmt.Println(id, "Writing response")
 	_, err = conn.Write([]byte(resp))
