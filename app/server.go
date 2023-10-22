@@ -11,7 +11,7 @@ import (
 
 const ROOT_PATH = "/"
 const ECHO_PATH = "/echo/"
-const NIL_PATH = "nil_GET"
+const NF_PATH = "GET_404"
 
 var ESCAPE = "\r\n"
 
@@ -21,8 +21,9 @@ func main() {
 	dirF := flag.String("directory", "", "Provide Directory For Files Path")
 	flag.Parse()
 
-	createController(GET ,"nil", func(req HttpRequest) string {
-		return buildErrorResponse(404, "Not Found", fmt.Sprintf("Path Not Found: %s", req.path)) 
+	createController(GET ,"404", func(req HttpRequest) string {
+		fmt.Printf(req.requestId, "Path Not Found:", req.method, req.path)
+		return buildErrorResponse(404, "Not Found", fmt.Sprintf("Path Not Found: %s", req.path[0])) 
 	})
 
 	createController(GET, "/", func(req HttpRequest) string {
@@ -53,7 +54,8 @@ func main() {
 		fileName :=  strings.TrimPrefix(req.path[1], "/")
 		fileContent, err := os.ReadFile(path.Join(*dirF, fileName))
 		if(err != nil) {
-			return buildErrorResponse(404, "Not Found", "Error Reading File")
+			fmt.Println(req.requestId, "Error reading file:", err.Error())
+			return buildErrorResponse(404, "Not Found", fmt.Sprintf("Can't read File: %s", fileName))
 		}
 
 		message := string(fileContent)
@@ -71,7 +73,8 @@ func main() {
 		fileName :=  strings.TrimPrefix(req.path[1], "/")
 		err := os.WriteFile(path.Join(*dirF, fileName), req.body, 0644)
 		if(err != nil) {
-			return buildErrorResponse(404, "Not Found", "Error Reading File")
+			fmt.Println(req.requestId, "Error writing file:", err.Error())
+			return buildErrorResponse(404, "Not Found", "Error Writing File")
 		}
 
 		headers := make(map[HttpHeader]string)

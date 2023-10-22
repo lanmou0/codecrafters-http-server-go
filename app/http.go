@@ -30,6 +30,7 @@ const (
 )
 
 type HttpRequest struct {
+	requestId string
 	version string;
 	path []string;
 	method HttpMethod;
@@ -53,6 +54,8 @@ func parseRequest(request []byte, id string) HttpRequest {
 	fmt.Println(id, "Parsing request")
 
 	hRequest := HttpRequest{};
+	hRequest.requestId = id
+
 	lines := strings.Split(string(request), ESCAPE)
 
 	for _, l := range lines {
@@ -72,8 +75,6 @@ func parseRequest(request []byte, id string) HttpRequest {
 	headersIndex := slices.Index(lines[1:], "")
 	hRequest.headers = make(map[HttpHeader]string)
 
-
-	
 	for _, h := range lines[1:headersIndex+1] {
 		h1 := strings.Split(h, ":")
 		hRequest.headers[HttpHeader(h1[0])] = strings.TrimSpace(h1[1])
@@ -153,7 +154,7 @@ func handleRequest(conn net.Conn, id string) {
 	fmt.Println(id, "Writing response")
 	_, err = conn.Write([]byte(resp))
 	if err != nil {
-		fmt.Println(id, "Error writing request: ", err.Error())
+		fmt.Println(id, "Error writing request:", err.Error())
 		return
 	}
 	fmt.Println(id, "Response sent")

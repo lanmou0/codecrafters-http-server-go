@@ -20,14 +20,13 @@ func createController(method HttpMethod, path string, controller func(HttpReques
 func getController(method HttpMethod, path string, id string) func(HttpRequest) string {
 	key := getKey(method, path)
 	if(controllers[key] == nil) {
-		fmt.Println(id, "Path not found ", method, path)
-		return controllers[NIL_PATH]
+		return controllers[NF_PATH]
 	}
 	fmt.Println(id, "Handling request for ", method, path)
 	return controllers[key]
 }
 
 func getKey(method HttpMethod, path string) string {
-	return fmt.Sprint("%s_%s", path, string(method))
+	return fmt.Sprintf("%s_%s", string(method), path)
 }
 
